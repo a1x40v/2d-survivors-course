@@ -1,5 +1,6 @@
 using System.Linq;
 using Godot;
+using Godot.Collections;
 
 public partial class SwordAbilityController : Node
 {
@@ -8,12 +9,17 @@ public partial class SwordAbilityController : Node
 	[Export]
 	public PackedScene SwordAbility { get; set; }
 
+	private Timer _timer;
 	private float _damage = 5;
+	private double _baseWaitTime;
 
 	public override void _Ready()
 	{
-		var timer = GetNode<Timer>("Timer");
-		timer.Timeout += OnTimerTimeout;
+		_timer = GetNode<Timer>("Timer");
+		_timer.Timeout += OnTimerTimeout;
+		_baseWaitTime = _timer.WaitTime;
+		var gameEvents = GetNode<GameEvents>("/root/GameEvents");
+		gameEvents.Connect("AbilityUpgradeAdded", new Callable(this, nameof(OnAbilityUpgradeAdded)));
 	}
 
 	private void OnTimerTimeout()
@@ -44,5 +50,15 @@ public partial class SwordAbilityController : Node
 
 		var enemyDirecion = closestEnemy.GlobalPosition - swordInstance.GlobalPosition;
 		swordInstance.Rotation = enemyDirecion.Angle();
+	}
+
+	public void OnAbilityUpgradeAdded(AbilityUpgrade upgrade, Dictionary<string, Dictionary> currentUpgrades)
+	{
+		if (upgrade.Id != "sword_rate") return;
+
+		double percentReduction = (int)currentUpgrades["sword_rate"]["quantity"] * .1;
+		/*	TODO Выбрать минимальное время таймера */
+		_timer.WaitTime = Mathf.Max(_baseWaitTime * (1 - percentReduction), 0.2);
+		_timer.Start();
 	}
 }

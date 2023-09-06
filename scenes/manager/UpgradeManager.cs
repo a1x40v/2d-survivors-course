@@ -9,6 +9,9 @@ public partial class UpgradeManager : Node
 	[Export]
 	public Node ExperienceManager { get; set; }
 
+	[Export]
+	public PackedScene UpgradeScreenScene { get; set; }
+
 	public Dictionary<string, Dictionary> CurrentUpgrades { get; set; } = new Dictionary<string, Dictionary>();
 
 	public override void _Ready()
@@ -21,21 +24,37 @@ public partial class UpgradeManager : Node
 		var chosenUpgrade = UpgradePool.PickRandom();
 		if (chosenUpgrade == null) return;
 
-		var hasUpgrade = CurrentUpgrades.ContainsKey(chosenUpgrade.Id);
+		var upgradeScreenInstance = UpgradeScreenScene.Instantiate() as UpgradeScreen;
+		AddChild(upgradeScreenInstance);
+		upgradeScreenInstance.SetAbilityUpgrades(new Array<AbilityUpgrade> { chosenUpgrade });
+		upgradeScreenInstance.Connect("UpgradeSelected", new Callable(this, nameof(OnUpgradeSelected)));
+	}
+
+	public void ApplyUpgrade(AbilityUpgrade upgrade)
+	{
+		var hasUpgrade = CurrentUpgrades.ContainsKey(upgrade.Id);
 		if (!hasUpgrade)
 		{
-			var upgrade = new Dictionary
+			var dic = new Dictionary
 			{
-				{ "resource", chosenUpgrade },
+				{ "resource", upgrade },
 				{ "quantity", 1 }
 			};
-			CurrentUpgrades.Add(chosenUpgrade.Id, upgrade);
+			CurrentUpgrades.Add(upgrade.Id, dic);
 		}
 		else
 		{
-			CurrentUpgrades[chosenUpgrade.Id]["quantity"] = (int)CurrentUpgrades[chosenUpgrade.Id]["quantity"] + 1;
+			CurrentUpgrades[upgrade.Id]["quantity"] = (int)CurrentUpgrades[upgrade.Id]["quantity"] + 1;
 		}
 
+		var gameEvents = GetNode<GameEvents>("/root/GameEvents");
+		gameEvents.EmitAbilityUpgradeAdded(upgrade, CurrentUpgrades);
+
 		GD.Print(CurrentUpgrades);
+	}
+
+	public void OnUpgradeSelected(AbilityUpgrade upgrade)
+	{
+		ApplyUpgrade(upgrade);
 	}
 }
