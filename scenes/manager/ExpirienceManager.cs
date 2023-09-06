@@ -7,6 +7,9 @@ public partial class ExpirienceManager : Node
 	[Signal]
 	public delegate void ExpirienceUpdatedEventHandler(float currentExp, float targetExp);
 
+	[Signal]
+	public delegate void LevelUpEventHandler(int newLevel);
+
 	private float _currentExp;
 	private float _targetExperience = 5;
 	private int _currentLevel = 1;
@@ -28,6 +31,7 @@ public partial class ExpirienceManager : Node
 			_targetExperience += TargetExperienceGrow;
 			_currentExp = 0;
 			EmitSignal("ExpirienceUpdated", _currentExp, _targetExperience);
+			EmitSignal("LevelUp", _currentLevel);
 		}
 		GD.Print(_currentExp);
 	}
