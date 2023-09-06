@@ -22,7 +22,9 @@ public partial class EnemyManager : Node
 		Vector2 spawnPosition = player.GlobalPosition + randomDir * SpawnRadius;
 
 		var enemy = BasicEnemyScene.Instantiate() as Node2D;
-		GetParent().AddChild(enemy);
+
+		var entitiesLayer = GetTree().GetFirstNodeInGroup("entities_layer");
+		entitiesLayer.AddChild(enemy);
 		enemy.GlobalPosition = spawnPosition;
 	}
 }

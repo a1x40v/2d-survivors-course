@@ -42,9 +42,10 @@ public partial class SwordAbilityController : Node
 			.First();
 
 		var swordInstance = SwordAbility.Instantiate() as SwordAbility;
-		swordInstance.HitboxComponent.Damage = _damage;
+		var foregroundLayer = GetTree().GetFirstNodeInGroup("foreground_layer");
+		foregroundLayer.AddChild(swordInstance);
 
-		player.GetParent().AddChild(swordInstance);
+		swordInstance.HitboxComponent.Damage = _damage;
 		swordInstance.GlobalPosition = closestEnemy.GlobalPosition;
 		swordInstance.GlobalPosition += Vector2.Right.Rotated((float)GD.RandRange(0, Mathf.Tau)) * 4;
 
