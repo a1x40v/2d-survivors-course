@@ -8,16 +8,19 @@ public partial class HealthComponent : Node
 	[Signal]
 	public delegate void DiedEventHandler();
 
-	private float _currentHealth;
+	[Signal]
+	public delegate void HealthChangedEventHandler();
+
+	public float CurrentHealth { get; set; }
 
 	public override void _Ready()
 	{
-		_currentHealth = MaxHealth;
+		CurrentHealth = MaxHealth;
 	}
 
 	private void CheckDeath()
 	{
-		if (_currentHealth == 0)
+		if (CurrentHealth == 0)
 		{
 			EmitSignal("Died");
 			Owner.QueueFree();
@@ -26,8 +29,14 @@ public partial class HealthComponent : Node
 
 	public void Damage(float damage)
 	{
-		_currentHealth = Mathf.Max(_currentHealth - damage, 0);
-
+		CurrentHealth = Mathf.Max(CurrentHealth - damage, 0);
+		EmitSignal("HealthChanged");
 		CallDeferred(nameof(CheckDeath));
+	}
+
+	public float GetHealthPercent()
+	{
+		if (MaxHealth <= 0) return 0;
+		return Mathf.Min(CurrentHealth / MaxHealth, 1);
 	}
 }
