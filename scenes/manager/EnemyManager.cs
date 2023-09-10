@@ -21,21 +21,37 @@ public partial class EnemyManager : Node
 		ArenaTimeManager.Connect("ArenaDifficultyIncreased", new Callable(this, nameof(OnArenaDifficultyIncreased)));
 	}
 
-	private void OnTimerTimeout()
+	private Vector2 GetSpawnPosition(Node2D player)
+	{
+		Vector2 randomDir = Vector2.Right.Rotated((float)GD.RandRange(0, Mathf.Tau));
+		Vector2 spawnPosition = Vector2.Zero;
+
+		for (int i = 0; i < 4; i++)
+		{
+			spawnPosition = player.GlobalPosition + randomDir * SpawnRadius;
+
+			var queryParemeters = PhysicsRayQueryParameters2D.Create(player.GlobalPosition, spawnPosition, 1);
+			var result = GetTree().Root.World2D.DirectSpaceState.IntersectRay(queryParemeters);
+
+			if (result.Count == 0) break;
+
+			randomDir = randomDir.Rotated(Mathf.DegToRad(90));
+		}
+
+		return spawnPosition;
+	}
+
+	public void OnTimerTimeout()
 	{
 		_timer.Start();
 
 		var player = GetTree().GetFirstNodeInGroup("player") as Node2D;
 		if (player == null) return;
 
-		Vector2 randomDir = Vector2.Right.Rotated((float)GD.RandRange(0, Mathf.Tau));
-		Vector2 spawnPosition = player.GlobalPosition + randomDir * SpawnRadius;
-
 		var enemy = BasicEnemyScene.Instantiate() as Node2D;
-
 		var entitiesLayer = GetTree().GetFirstNodeInGroup("entities_layer");
 		entitiesLayer.AddChild(enemy);
-		enemy.GlobalPosition = spawnPosition;
+		enemy.GlobalPosition = GetSpawnPosition(player);
 	}
 
 	public void OnArenaDifficultyIncreased(int difficulty)
