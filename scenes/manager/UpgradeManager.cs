@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using Godot.Collections;
 
@@ -19,15 +20,18 @@ public partial class UpgradeManager : Node
 		ExperienceManager.Connect("LevelUp", new Callable(this, nameof(OnLevelUp)));
 	}
 
-	public void OnLevelUp(int currentLevel)
+	private Array<AbilityUpgrade> pickUpgrades()
 	{
-		var chosenUpgrade = UpgradePool.PickRandom();
-		if (chosenUpgrade == null) return;
+		var chosenUpgrades = new Array<AbilityUpgrade> { };
+		var filteredUpgrades = UpgradePool.Duplicate();
+		for (int i = 0; i < 2; i++)
+		{
+			var chosenUpgrade = filteredUpgrades.PickRandom();
+			chosenUpgrades.Add(chosenUpgrade);
+			filteredUpgrades = new Array<AbilityUpgrade>(filteredUpgrades.Where(x => x.Id != chosenUpgrade.Id));
+		}
 
-		var upgradeScreenInstance = UpgradeScreenScene.Instantiate() as UpgradeScreen;
-		AddChild(upgradeScreenInstance);
-		upgradeScreenInstance.SetAbilityUpgrades(new Array<AbilityUpgrade> { chosenUpgrade });
-		upgradeScreenInstance.Connect("UpgradeSelected", new Callable(this, nameof(OnUpgradeSelected)));
+		return chosenUpgrades;
 	}
 
 	public void ApplyUpgrade(AbilityUpgrade upgrade)
@@ -51,6 +55,15 @@ public partial class UpgradeManager : Node
 		gameEvents.EmitAbilityUpgradeAdded(upgrade, CurrentUpgrades);
 
 		GD.Print(CurrentUpgrades);
+	}
+
+	public void OnLevelUp(int currentLevel)
+	{
+		var upgradeScreenInstance = UpgradeScreenScene.Instantiate() as UpgradeScreen;
+		AddChild(upgradeScreenInstance);
+		var chosenUpgrades = pickUpgrades();
+		upgradeScreenInstance.SetAbilityUpgrades(chosenUpgrades);
+		upgradeScreenInstance.Connect("UpgradeSelected", new Callable(this, nameof(OnUpgradeSelected)));
 	}
 
 	public void OnUpgradeSelected(AbilityUpgrade upgrade)
